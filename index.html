@@ -77,19 +77,29 @@ const CONTENT_TRACKS = {
 
 const TEMPLATES = {
   patient: {
-    title: "AI-Friendly 患者衛教文章模板",
+    title: "衛教文章模板 v1.0（恆癒系統）",
+    workflow: [
+      { step: "Step 1", label: "Web Search", desc: "蒐集最新文獻方向，僅作撰文參考，非最終引用來源" },
+      { step: "Step 2", label: "撰寫初稿", desc: "依文章結構完成全文；五型框架使用正式定義，禁止自行替換" },
+      { step: "Step 3", label: "OE 驗證問句", desc: "輸出 2 條英文臨床問句，送 OpenEvidence 驗證" },
+      { step: "Step 4", label: "OE 修訂", desc: "以 OE references 為權威來源修訂文章；Web Search 來源標註 ⚡" },
+      { step: "Step 5", label: "最終審查", desc: "逐條核查內容紅線、FAQ 對齊、Schema 格式" },
+    ],
     structure: [
-      { section: "文章標題",           hint: "含主關鍵字，30字內，問句形式佳" },
-      { section: "Meta Description",   hint: "150字內，含關鍵字+痛點+解法預告" },
-      { section: "開場（痛點共鳴）",   hint: "2-3句，描述患者真實困擾場景" },
-      { section: "核心觀點（根源分類）",hint: "用五型框架歸類，解釋為何傳統治療無效" },
-      { section: "代謝視角解讀",       hint: "恆癒系統獨特觀點：從代謝角度看這個痛" },
-      { section: "門診常見情況",       hint: "模糊化臨床敘事，不編造精確數字或特定病例" },
-      { section: "自我檢測清單",       hint: "3-5個患者可自行判斷的指標" },
-      { section: "FAQ 常見問題",       hint: "3-5題，問句口語化第一人稱（例：「我痛了三年，為什麼吃藥都沒用？」），答案 2-3 句，簡潔讓 AI 摘錄；放在作者資訊之前，為正式內容的一部分" },
-      { section: "結尾引導＋作者資訊", hint: "鼓勵與醫師討論；附作者簡介一句話版本" },
-      { section: "Schema Markup",      hint: "雙重覆蓋：MedicalWebPage（餵 AI 搜尋）+ FAQPage JSON-LD（餵 Google rich results），FAQ 可見內容與 Schema 保持一致" },
-      { section: "OE 驗證問句",        hint: "2 題英文臨床問句，供 OpenEvidence 驗證核心主張" },
+      { section: "標題",             hint: "含主關鍵字，問句形式，30 字內" },
+      { section: "Meta Description", hint: "150 字內，含關鍵字＋痛點＋解法預告" },
+      { section: "開場（痛點共鳴）", hint: "2-3 句，描述患者真實困擾場景" },
+      { section: "核心觀點",         hint: "用五型根源分類框架解釋為何傳統治療效果有限（使用正式版定義）" },
+      { section: "代謝視角解讀",     hint: "從代謝角度重新理解該疼痛（恆癒系統獨特觀點）" },
+      { section: "門診常見情況",     hint: "模糊化敘事描述臨床觀察，不編造精確數字或特定病例" },
+      { section: "自我檢測清單",     hint: "3-5 個可自行判斷的指標，對應相關 Type（使用正式版指標）" },
+      { section: "FAQ 常見問題",     hint: "4-5 題，口語化第一人稱問句，答案 2-3 句；可見內容 ＝ JSON-LD 內容（雙軌對齊）" },
+      { section: "結尾",             hint: "鼓勵讀者主動與醫師討論" },
+      { section: "作者資訊",         hint: "吳政庭醫師固定版本（疼痛醫學 × 內分泌雙專科、恆癒系統創辦人、Podcast 主持人）" },
+      { section: "內部連結建議",     hint: "至少 2 篇相關文章主題" },
+      { section: "Schema Markup",    hint: "MedicalWebPage ＋ FAQPage JSON-LD，可見 FAQ 與 Schema 完全對齊" },
+      { section: "OE 驗證問句",      hint: "2 條英文臨床問句（核心因果主張 ＋ 治療建議）" },
+      { section: "參考文獻",         hint: "🟢 OE references 直接採用｜🟡 Web Search 來源標 ⚡｜🔴 AI 自行生成書目禁止" },
     ],
   },
   physician: {
@@ -156,43 +166,102 @@ function PromptGen() {
       : "";
 
     const prompts = {
-      patient: `你是「恆癒系統」的內容策略師。請為吳政庭醫師（Dr. Cheng-Ting Wu）撰寫一篇患者衛教文章。
-【主題】${topic || "（請填入主題）"}
+      patient: `你是「恆癒系統」的內容策略師，負責協助吳政庭醫師產製患者衛教文章。請依照以下五步驟工作流程與規格執行。
+
+━━━ 工作流程 ━━━
+
+Step 1｜Web Search
+先針對主題做網路搜尋，蒐集最新文獻方向與關鍵詞。
+此階段結果僅作撰文參考，不列為最終引用來源。
+
+Step 2｜撰寫初稿
+依照下方「文章結構」完成全文。
+五型根源分類框架必須使用正式版定義，禁止自行編造或替換條目。
+機轉描述可參考文獻撰寫，但不虛構精確數據。
+
+Step 3｜OE 驗證問句
+文章末尾輸出 2 條英文臨床問句（核心因果主張 + 治療建議），供吳醫師送 OpenEvidence 驗證。
+
+Step 4｜（待吳醫師回傳 OE 結果後執行）修訂文章
+- 以 OE 回傳的 references 為權威來源，直接採用其作者、期刊、年份、DOI
+- 不另行搜尋或拼湊書目，避免錯誤
+- 若 OE 帶出新文獻或新機轉，整合進正文
+- 若 OE 指出限制或警語，加入平衡語句
+- 若有 OE 未覆蓋的 Web Search 來源，標註「⚡ Web Search 來源，建議另行驗證」
+
+Step 5｜最終審查
+逐條核查內容紅線、可見 FAQ 與 JSON-LD 對齊、Schema 格式正確性。
+
+━━━ 主題 ━━━
+${topic || "（請填入主題）"}
 ${typeBlock}
-【品牌定位】找到痛的根源，不只是止痛
-【目標讀者】正在搜尋疼痛解法的台灣患者
-【作者簡介】
-吳政庭醫師（Dr. Cheng-Ting Wu），具備「疼痛醫學」與「新陳代謝／內分泌」雙重專科醫師資格，致力推廣「恆癒系統」——結合疼痛管理、代謝健康與功能醫學的整合療癒架構。深信人體的疼痛與慢性疾病絕非局部單一問題，而是整體系統性失衡的結果。現任醫學 Podcast《怪奇疼痛案內所》主持人。
-【文章結構要求】
-1. 標題：含主關鍵字，問句形式，30字內
-2. Meta Description：150字內
-3. 開場（痛點共鳴）：描述患者真實困擾場景，2-3句
+
+━━━ 文章結構（依序輸出）━━━
+
+1. 標題：含主關鍵字，問句形式，30 字內
+2. Meta Description：150 字內，含關鍵字＋痛點＋解法預告
+3. 開場（痛點共鳴）：2-3 句，描述患者真實困擾場景
 4. 核心觀點：用五型根源分類框架解釋為何傳統治療效果有限
-5. 代謝視角解讀：從代謝角度重新理解這個疼痛（恆癒系統獨特觀點）
-6. 門診常見情況：用模糊化敘事描述臨床觀察，不編造精確數字
-7. 自我檢測清單：3-5個可自行判斷的指標
-8. FAQ 常見問題（放在作者資訊之前，為正式內容一部分，非附錄）：
-   - 3-5題，問句口語化、第一人稱（貼近真實搜尋語句，例：「我痛了三年，為什麼吃藥都沒用？」）
-   - 每題答案 2-3 句，簡潔讓 AI 搜尋引擎可直接摘錄
-   - 問題涵蓋：症狀辨識、為何傳統治療有限、代謝視角、何時就醫
-9. 結尾：作者一句話簡介 + 鼓勵讀者主動與醫師討論
-【內容紅線】
-- 禁止虛構精確數據（年齡、檢驗值、改善百分比）
-- 禁止寫成廣告文（不列門診地址、不用推銷語氣）
-- 案例用「門診常見情況」而非「某位患者」
-- 語氣像醫師在診間解釋，不像行銷文案
-【SEO 要求】
+5. 代謝視角解讀：從代謝角度重新理解該疼痛（恆癒系統獨特觀點）
+6. 門診常見情況：模糊化敘事描述臨床觀察，不編造精確數字或特定病例
+7. 自我檢測清單：3-5 個可自行判斷的指標（對應相關 Type）
+8. FAQ 常見問題（置於結尾之前，正式內容的一部分，非附錄）：
+   - 4-5 題，問句口語化、第一人稱，貼近真實搜尋語句
+   - 例：「我痛了三年，為什麼吃止痛藥都沒用？」「代謝跟我的肩頸痛有什麼關係？」
+   - 每題答案 2-3 句，簡潔完整，讓 AI 搜尋引擎可直接摘錄
+   - 涵蓋：症狀辨識、傳統治療侷限、代謝視角、何時就醫
+9. 結尾：鼓勵讀者主動與醫師討論
+10. 作者資訊（固定版本）：
+    吳政庭醫師（Dr. Cheng-Ting Wu）
+    疼痛醫學 × 新陳代謝／內分泌 雙專科｜恆癒系統創辦人｜Podcast《怪奇疼痛案內所》主持人
+11. 內部連結建議：至少 2 篇相關文章主題
+12. Schema Markup（JSON-LD）：MedicalWebPage ＋ FAQPage，可見 FAQ 與 Schema 完全對齊
+13. OE 驗證問句：2 條英文臨床問句
+14. 參考文獻：🟢 OE references 直接採用｜🟡 Web Search 來源標 ⚡｜🔴 AI 自行生成書目禁止
+
+━━━ 五型根源分類框架（正式版，禁止更動）━━━
+
+Type 1 機械結構型｜The Mechanical｜比喻：壞掉的零件
+檢測指標：
+・疼痛因特定動作或姿勢明顯加劇或減緩
+・曾受重大外傷或手術（含非疼痛部位）
+・關節活動度受限，或活動時有異常卡頓感或聲響
+
+Type 2 代謝發炎型｜The Inflamed｜比喻：著火的系統
+檢測指標：
+・疼痛部位常伴紅腫熱感，早晨僵硬、活動後緩解
+・飲食常攝取外食、炸物、精緻澱粉或含糖飲料
+・除關節肌肉痛外，常有腸胃脹氣、腹瀉、便祕或皮膚過敏
+
+Type 3 神經敏感型｜The Wired｜比喻：短路的電線
+檢測指標：
+・痛感為刺痛、燒灼感、觸電感或麻木感，範圍可能游移
+・壓力大、焦慮或睡眠差時，疼痛被放大數倍
+・皮膚對輕微觸碰、冷熱變化異常敏感
+
+Type 4 荷爾蒙疲勞型｜The Burnout｜比喻：沒油的引擎
+檢測指標：
+・極度疲勞，睡再久醒來仍未充電
+・非常依賴咖啡因或提神飲料撐過一天
+・運動後恢復期極長，稍動即體力透支、痠痛持續數天
+
+Type 5 毒素敏感型｜The Canary｜比喻：中毒的運算單元
+檢測指標：
+・疼痛外常有腦霧、記憶衰退、注意力難集中
+・對特定氣味（香水、油漆）、化學物質或潮濕環境強烈不適
+・體重曾不明原因劇烈變化，或家族有自體免疫疾病病史
+
+━━━ 內容紅線 ━━━
+❌ 禁止虛構精確數據（年齡、檢驗值、改善百分比）
+❌ 禁止寫成廣告文（不列門診地址、不用推銷語氣）
+❌ 案例用「門診常見情況」而非「某位患者」
+❌ 禁止自行編造或替換五型根源分類的條目內容
+✅ 語氣像醫師在診間解釋，專業但溫暖
+
+━━━ SEO 要求 ━━━
 - 輸出格式：Markdown
-- 附上雙重 Schema Markup（JSON-LD）：
-  ① MedicalWebPage：讓 AI 搜尋引擎（Perplexity、ChatGPT Search）理解頁面權威性
-  ② FAQPage：FAQ 可見內容與 Schema 保持一致，餵 Google rich results
-- 自然語言，適合 AI 搜尋引擎摘錄
-- 內部連結建議：至少2篇相關文章主題
-【OE 驗證提示】
-📋 請額外輸出供 OpenEvidence 驗證的問句：
-1.（針對文章核心因果主張的英文臨床問句）
-2.（針對治療建議的英文臨床問句）
-【語氣】專業但溫暖，像一位會解釋原因的好醫師`,
+- Schema：MedicalWebPage（餵 AI 搜尋）＋ FAQPage JSON-LD（餵 Google rich results）
+- 自然語言，適合 AI 搜尋引擎摘錄`,
 
       physician: `你是「恆癒系統」的學術內容策略師。請為吳政庭醫師（Dr. Cheng-Ting Wu）撰寫一篇面向醫師同業的 Substack 文章。
 【主題】${topic || "（請填入主題）"}
@@ -328,15 +397,34 @@ function TemplateView({ track }) {
   const t = TEMPLATES[track];
   if (!t) return <div style={{ color: M.muted, padding: 20 }}>此軌道模板開發中...</div>;
   return (
-    <div style={{ padding: "20px 0" }}>
+    <div style={{ padding: "20px 0", display: "flex", flexDirection: "column", gap: 14 }}>
+      {t.workflow && (
+        <Card>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+            <span style={{ fontSize: 13 }}>⚡</span>
+            <h3 style={{ margin: 0, color: M.text, fontSize: 14, fontWeight: 700 }}>工作流程（五步驟）</h3>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            {t.workflow.map((w, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "8px 12px", background: M.cardAlt, borderRadius: 7 }}>
+                <span style={{ fontSize: 10, padding: "2px 7px", borderRadius: 4, background: `rgba(106,143,160,0.15)`, color: M.blue, fontWeight: 700, whiteSpace: "nowrap", marginTop: 1 }}>{w.step}</span>
+                <div>
+                  <span style={{ color: M.text, fontSize: 12, fontWeight: 600 }}>{w.label}　</span>
+                  <span style={{ color: M.muted, fontSize: 11 }}>{w.desc}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
       <Card>
-        <h3 style={{ margin: "0 0 16px", color: M.text, fontSize: 15 }}>{t.title}</h3>
-        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+        <h3 style={{ margin: "0 0 14px", color: M.text, fontSize: 14, fontWeight: 700 }}>文章結構（{t.structure.length} 節）</h3>
+        <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
           {t.structure.map((s, i) => (
-            <div key={i} style={{ display: "flex", gap: 12, padding: "10px 14px", background: i % 2 === 0 ? M.cardAlt : "transparent", borderRadius: 8 }}>
-              <div style={{ minWidth: 28, height: 28, borderRadius: "50%", background: `rgba(106,143,160,0.15)`, display: "flex", alignItems: "center", justifyContent: "center", color: M.blue, fontSize: 12, fontWeight: 700, flexShrink: 0 }}>{i + 1}</div>
+            <div key={i} style={{ display: "flex", gap: 12, padding: "9px 12px", background: i % 2 === 0 ? M.cardAlt : "transparent", borderRadius: 7 }}>
+              <div style={{ minWidth: 24, height: 24, borderRadius: "50%", background: `rgba(106,143,160,0.15)`, display: "flex", alignItems: "center", justifyContent: "center", color: M.blue, fontSize: 11, fontWeight: 700, flexShrink: 0 }}>{i + 1}</div>
               <div>
-                <div style={{ color: M.text, fontSize: 13, fontWeight: 600 }}>{s.section}</div>
+                <div style={{ color: M.text, fontSize: 12, fontWeight: 600 }}>{s.section}</div>
                 <div style={{ color: M.muted, fontSize: 11, marginTop: 2 }}>{s.hint}</div>
               </div>
             </div>
@@ -507,7 +595,7 @@ function App() {
 
       {/* Footer */}
       <div style={{ padding: "14px 20px", borderTop: `1px solid ${M.border}`, textAlign: "center" }}>
-        <p style={{ margin: 0, color: M.faint, fontSize: 10 }}>恆癒系統 Content Engine v3.4 — Notion 已串接 ✅ | Claude Cowork + OpenEvidence</p>
+        <p style={{ margin: 0, color: M.faint, fontSize: 10 }}>恆癒系統 Content Engine v4.0 — Notion 已串接 ✅ | Claude Cowork + OpenEvidence</p>
       </div>
     </div>
   );
