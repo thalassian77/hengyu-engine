@@ -20,174 +20,500 @@
 </style>
 </head>
 <body>
+<script>
+(function(){
+  if(sessionStorage.getItem('hengyu_auth')==='falcon77') return;
+  var input = window.prompt('🔐 請輸入密碼 / Enter password:');
+  if(input==='falcon77'){
+    sessionStorage.setItem('hengyu_auth','falcon77');
+  } else {
+    document.addEventListener('DOMContentLoaded', function(){
+      document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#F5F2EE;font-family:Noto Sans TC,sans-serif;"><div style="text-align:center;color:#8A847C;"><div style="font-size:48px;margin-bottom:16px;">🔒</div><div style="font-size:18px;">密碼錯誤，請重新整理頁面</div></div></div>';
+    });
+    document.documentElement.style.display='none';
+    window.stop();
+  }
+})();
+</script>
 <div id="root"></div>
 <script type="text/babel">
 const { useState } = React;
+
 const NOTION_DB_URL = "https://www.notion.so/3eeaec5364874f6497a09099c7c3152f";
+
 const M = {
-  bg:"#F5F2EE",card:"#FFFFFF",cardAlt:"#F0EDE8",
-  border:"rgba(160,150,138,0.18)",borderMd:"rgba(160,150,138,0.28)",
-  text:"#3A3630",muted:"#8A847C",faint:"#BDB6AC",
-  blue:"#6A8FA0",rose:"#A87060",mauve:"#8A7D98",sand:"#B09070",sage:"#6A8168",
-  blueAlpha:"rgba(106,143,160,0.12)",roseAlpha:"rgba(168,112,96,0.12)",
-  mauveAlpha:"rgba(138,125,152,0.12)",sandAlpha:"rgba(176,144,112,0.12)",sageAlpha:"rgba(106,129,104,0.12)",
+  bg:         "#F5F2EE",
+  card:       "#FFFFFF",
+  cardAlt:    "#F0EDE8",
+  border:     "rgba(160,150,138,0.18)",
+  borderMd:   "rgba(160,150,138,0.28)",
+  text:       "#3A3630",
+  muted:      "#8A847C",
+  faint:      "#BDB6AC",
+  blue:       "#6A8FA0",
+  rose:       "#A87060",
+  mauve:      "#8A7D98",
+  sand:       "#B09070",
+  sage:       "#6A8168",
+  blueAlpha:  "rgba(106,143,160,0.12)",
+  roseAlpha:  "rgba(168,112,96,0.12)",
+  mauveAlpha: "rgba(138,125,152,0.12)",
+  sandAlpha:  "rgba(176,144,112,0.12)",
+  sageAlpha:  "rgba(106,129,104,0.12)",
 };
-const PAIN_TYPES=[
-  {id:1,name:"機械型",label:"Mechanical",color:M.blue,bg:M.blueAlpha,icon:"⚙️"},
-  {id:2,name:"代謝發炎型",label:"Metabolic-Inflammatory",color:M.rose,bg:M.roseAlpha,icon:"🔥"},
-  {id:3,name:"神經敏感型",label:"Neural Sensitivity",color:M.mauve,bg:M.mauveAlpha,icon:"⚡"},
-  {id:4,name:"荷爾蒙疲勞型",label:"Hormonal Fatigue",color:M.sand,bg:M.sandAlpha,icon:"🌙"},
-  {id:5,name:"毒素敏感型",label:"Toxin Sensitivity",color:M.sage,bg:M.sageAlpha,icon:"🧪"},
+
+const PAIN_TYPES = [
+  { id: 1, name: "機械型",      label: "Mechanical",             color: M.blue,  bg: M.blueAlpha,  icon: "⚙️" },
+  { id: 2, name: "代謝發炎型",  label: "Metabolic-Inflammatory", color: M.rose,  bg: M.roseAlpha,  icon: "🔥" },
+  { id: 3, name: "神經敏感型",  label: "Neural Sensitivity",     color: M.mauve, bg: M.mauveAlpha, icon: "⚡" },
+  { id: 4, name: "荷爾蒙疲勞型",label: "Hormonal Fatigue",       color: M.sand,  bg: M.sandAlpha,  icon: "🌙" },
+  { id: 5, name: "毒素敏感型",  label: "Toxin Sensitivity",      color: M.sage,  bg: M.sageAlpha,  icon: "🧪" },
 ];
-const CONTENT_TRACKS={patient:{name:"患者衛教文章",icon:"📖"},physician:{name:"醫師 Substack",icon:"🩺"}};
-const TEMPLATES={
-  patient:{title:"AI-Friendly 患者衛教文章模板",structure:[
-    {section:"文章標題",hint:"含主關鍵字，30字內，問句形式佳"},
-    {section:"Meta Description",hint:"150字內，含關鍵字+痛點+解法預告"},
-    {section:"開場（痛點共鳴）",hint:"2-3句，描述患者真實困擾場景"},
-    {section:"核心觀點（根源分類）",hint:"用五型框架歸類，解釋為何傳統治療無效"},
-    {section:"代謝視角解讀",hint:"恆癒系統獨特觀點：從代謝角度看這個痛"},
-    {section:"門診常見情況",hint:"模糊化臨床敘事，不編造精確數字或特定病例"},
-    {section:"自我檢測清單",hint:"3-5個患者可自行判斷的指標"},
-    {section:"結尾引導",hint:"鼓勵與醫師討論，不硬推特定門診"},
-    {section:"Schema Markup",hint:"MedicalWebPage + FAQPage 結構化資料"},
-    {section:"OE 驗證問句",hint:"2 題英文臨床問句，供 OpenEvidence 驗證核心主張"},
-  ]},
-  physician:{title:"醫師同業 Substack 模板",structure:[
-    {section:"標題",hint:"學術但不枯燥，引起同業好奇"},
-    {section:"臨床情境",hint:"常見但容易被忽略的情境描述，不編造特定病例"},
-    {section:"文獻回顧",hint:"2-3篇關鍵文獻，附DOI（不確定標註 [待驗證]）"},
-    {section:"代謝-疼痛交叉分析",hint:"你的獨特臨床洞察"},
-    {section:"治療決策樹",hint:"Step-by-step 臨床思路"},
-    {section:"實務 Tips",hint:"可立即用於門診的具體建議"},
-    {section:"延伸思考",hint:"開放性問題，邀請同業討論"},
-    {section:"OE 驗證問句",hint:"2 題英文臨床問句，供 OpenEvidence 驗證文獻與主張"},
-  ]},
+
+const CONTENT_TRACKS = {
+  patient:   { name: "患者衛教文章", icon: "📖" },
+  physician: { name: "醫師 Substack", icon: "🩺" },
 };
-function NotionBtn({label="🗄️ Notion",small=false}){
-  return <a href={NOTION_DB_URL} target="_blank" rel="noopener noreferrer" style={{display:"inline-flex",alignItems:"center",gap:5,padding:small?"4px 10px":"8px 16px",borderRadius:7,border:`1px solid ${M.borderMd}`,background:"rgba(106,143,160,0.08)",color:M.blue,fontSize:small?11:13,fontWeight:600,textDecoration:"none",whiteSpace:"nowrap",cursor:"pointer"}}>{label}</a>;
+
+const TEMPLATES = {
+  patient: {
+    title: "AI-Friendly 患者衛教文章模板",
+    structure: [
+      { section: "文章標題",           hint: "含主關鍵字，30字內，問句形式佳" },
+      { section: "Meta Description",   hint: "150字內，含關鍵字+痛點+解法預告" },
+      { section: "開場（痛點共鳴）",   hint: "2-3句，描述患者真實困擾場景" },
+      { section: "核心觀點（根源分類）",hint: "用五型框架歸類，解釋為何傳統治療無效" },
+      { section: "代謝視角解讀",       hint: "恆癒系統獨特觀點：從代謝角度看這個痛" },
+      { section: "門診常見情況",       hint: "模糊化臨床敘事，不編造精確數字或特定病例" },
+      { section: "自我檢測清單",       hint: "3-5個患者可自行判斷的指標" },
+      { section: "FAQ 常見問題",       hint: "3-5題，問句口語化第一人稱（例：「我痛了三年，為什麼吃藥都沒用？」），答案 2-3 句，簡潔讓 AI 摘錄；放在作者資訊之前，為正式內容的一部分" },
+      { section: "結尾引導＋作者資訊", hint: "鼓勵與醫師討論；附作者簡介一句話版本" },
+      { section: "Schema Markup",      hint: "雙重覆蓋：MedicalWebPage（餵 AI 搜尋）+ FAQPage JSON-LD（餵 Google rich results），FAQ 可見內容與 Schema 保持一致" },
+      { section: "OE 驗證問句",        hint: "2 題英文臨床問句，供 OpenEvidence 驗證核心主張" },
+    ],
+  },
+  physician: {
+    title: "醫師同業 Substack 模板",
+    structure: [
+      { section: "標題",               hint: "學術但不枯燥，引起同業好奇" },
+      { section: "臨床情境",           hint: "常見但容易被忽略的情境描述，不編造特定病例" },
+      { section: "文獻回顧",           hint: "2-3篇關鍵文獻，附DOI（不確定標註 [待驗證]）" },
+      { section: "代謝-疼痛交叉分析",  hint: "你的獨特臨床洞察" },
+      { section: "治療決策樹",         hint: "Step-by-step 臨床思路" },
+      { section: "實務 Tips",          hint: "可立即用於門診的具體建議" },
+      { section: "延伸思考",           hint: "開放性問題，邀請同業討論" },
+      { section: "OE 驗證問句",        hint: "2 題英文臨床問句，供 OpenEvidence 驗證文獻與主張" },
+    ],
+  },
+};
+
+// ─── Shared Components ───
+function NotionBtn({ label = "🗄️ Notion", small = false }) {
+  return (
+    <a href={NOTION_DB_URL} target="_blank" rel="noopener noreferrer" style={{
+      display: "inline-flex", alignItems: "center", gap: 5,
+      padding: small ? "4px 10px" : "8px 16px",
+      borderRadius: 7, border: `1px solid ${M.borderMd}`,
+      background: "rgba(106,143,160,0.08)",
+      color: M.blue, fontSize: small ? 11 : 13, fontWeight: 600,
+      textDecoration: "none", whiteSpace: "nowrap", cursor: "pointer",
+    }}>
+      {label}
+    </a>
+  );
 }
-function Card({children,style={}}){return <div style={{background:M.card,borderRadius:12,padding:24,border:`1px solid ${M.border}`,...style}}>{children}</div>;}
-function SectionLabel({children}){return <div style={{color:M.muted,fontSize:10,marginBottom:7,textTransform:"uppercase",letterSpacing:1.2}}>{children}</div>;}
-function PromptGen(){
-  const [selTypes,setSelTypes]=useState([]);
-  const [selTrack,setSelTrack]=useState("patient");
-  const [topic,setTopic]=useState("");
-  const [generated,setGenerated]=useState(null);
-  const toggleType=(id)=>setSelTypes(prev=>prev.includes(id)?prev.filter(x=>x!==id):[...prev,id]);
-  const generate=()=>{
-    const typeInfos=selTypes.map(id=>PAIN_TYPES.find(t=>t.id===id));
-    const typeBlock=typeInfos.length?`【疼痛分類】${typeInfos.map(t=>`Type ${t.id} ${t.name}（${t.label}）`).join("、")}`:"";
-    const prompts={
-      patient:`你是「恆癒系統」的內容策略師。請為吳政庭醫師（Dr. Cheng-Ting Wu）撰寫一篇患者衛教文章。\n【主題】${topic||"（請填入主題）"}\n${typeBlock}\n【品牌定位】找到痛的根源，不只是止痛\n【目標讀者】正在搜尋疼痛解法的台灣患者\n【作者簡介】\n吳政庭醫師（Dr. Cheng-Ting Wu），具備「疼痛醫學」與「新陳代謝／內分泌」雙重專科醫師資格，致力推廣「恆癒系統」——結合疼痛管理、代謝健康與功能醫學的整合療癒架構。深信人體的疼痛與慢性疾病絕非局部單一問題，而是整體系統性失衡的結果。現任醫學 Podcast《怪奇疼痛案內所》主持人。\n【文章結構要求】\n1. 標題：含主關鍵字，問句形式，30字內\n2. Meta Description：150字內\n3. 開場（痛點共鳴）：描述患者真實困擾場景，2-3句\n4. 核心觀點：用五型根源分類框架解釋為何傳統治療效果有限\n5. 代謝視角解讀：從代謝角度重新理解這個疼痛（恆癒系統獨特觀點）\n6. 門診常見情況：用模糊化敘事描述臨床觀察，不編造精確數字\n7. 自我檢測清單：3-5個可自行判斷的指標\n8. 結尾：鼓勵讀者主動與醫師討論，不硬推特定門診\n【內容紅線】\n- 禁止虛構精確數據（年齡、檢驗值、改善百分比）\n- 禁止寫成廣告文（不列門診地址、不用推銷語氣）\n- 案例用「門診常見情況」而非「某位患者」\n- 語氣像醫師在診間解釋，不像行銷文案\n【SEO 要求】\n- 輸出格式：Markdown\n- 附上 MedicalWebPage + FAQPage Schema Markup（JSON-LD）\n- 自然語言，適合 AI 搜尋引擎摘錄\n- 內部連結建議：至少2篇相關文章主題\n【OE 驗證提示】\n📋 請額外輸出供 OpenEvidence 驗證的問句：\n1.（針對文章核心因果主張的英文臨床問句）\n2.（針對治療建議的英文臨床問句）\n【語氣】專業但溫暖，像一位會解釋原因的好醫師`,
-      physician:`你是「恆癒系統」的學術內容策略師。請為吳政庭醫師（Dr. Cheng-Ting Wu）撰寫一篇面向醫師同業的 Substack 文章。\n【主題】${topic||"（請填入主題）"}\n${typeBlock}\n【定位】疼痛醫學 × 代謝內分泌的臨床交叉洞察\n【作者簡介】\n吳政庭醫師（Dr. Cheng-Ting Wu），具備「疼痛醫學」與「新陳代謝／內分泌」雙重專科醫師資格，致力推廣「恆癒系統」——結合疼痛管理、代謝健康與功能醫學的整合療癒架構。現任醫學 Podcast《怪奇疼痛案內所》主持人。\n【文章結構】\n1. 標題：學術但引起好奇\n2. 臨床情境：常見但容易被忽略的情境（不編造精確病例）\n3. 文獻回顧：2-3篇關鍵文獻（附DOI）— 不確定就標註「請驗證」\n4. 代謝-疼痛交叉分析：獨特臨床觀點\n5. 治療決策樹：Step-by-step 思路\n6. 實務Tips：可立即用於門診的具體建議\n7. 延伸思考：開放性問題邀請討論\n【內容紅線】\n- 文獻 DOI 不確定時標註 [DOI 待驗證]，不要編造\n- 臨床情境用「常見的情況是...」而非虛構特定病例\n- 用「臨床觀察」「我的經驗」而非「研究證實」（除非真的有引用）\n【OE 驗證提示】\n📋 請額外輸出供 OpenEvidence 驗證的問句：\n1.（針對核心文獻主張的英文臨床問句）\n2.（針對治療建議的英文臨床問句）\n【語氣】同儕對話，有臨床深度但不掉書袋`,
+
+function Card({ children, style = {} }) {
+  return (
+    <div style={{ background: M.card, borderRadius: 12, padding: 24, border: `1px solid ${M.border}`, ...style }}>
+      {children}
+    </div>
+  );
+}
+
+function SectionLabel({ children }) {
+  return (
+    <div style={{ color: M.muted, fontSize: 10, marginBottom: 7, textTransform: "uppercase", letterSpacing: 1.2 }}>
+      {children}
+    </div>
+  );
+}
+
+// ─── Prompt Generator ───
+function PromptGen() {
+  const [selTypes, setSelTypes] = useState([]);
+  const [selTrack, setSelTrack] = useState("patient");
+  const [topic, setTopic]       = useState("");
+  const [generated, setGenerated] = useState(null);
+
+  const toggleType = (id) =>
+    setSelTypes(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+
+  const generate = () => {
+    const typeInfos = selTypes.map(id => PAIN_TYPES.find(t => t.id === id));
+    const typeBlock = typeInfos.length
+      ? `【疼痛分類】${typeInfos.map(t => `Type ${t.id} ${t.name}（${t.label}）`).join("、")}`
+      : "";
+
+    const prompts = {
+      patient: `你是「恆癒系統」的內容策略師。請為吳政庭醫師（Dr. Cheng-Ting Wu）撰寫一篇患者衛教文章。
+【主題】${topic || "（請填入主題）"}
+${typeBlock}
+【品牌定位】找到痛的根源，不只是止痛
+【目標讀者】正在搜尋疼痛解法的台灣患者
+【作者簡介】
+吳政庭醫師（Dr. Cheng-Ting Wu），具備「疼痛醫學」與「新陳代謝／內分泌」雙重專科醫師資格，致力推廣「恆癒系統」——結合疼痛管理、代謝健康與功能醫學的整合療癒架構。深信人體的疼痛與慢性疾病絕非局部單一問題，而是整體系統性失衡的結果。現任醫學 Podcast《怪奇疼痛案內所》主持人。
+【文章結構要求】
+1. 標題：含主關鍵字，問句形式，30字內
+2. Meta Description：150字內
+3. 開場（痛點共鳴）：描述患者真實困擾場景，2-3句
+4. 核心觀點：用五型根源分類框架解釋為何傳統治療效果有限
+5. 代謝視角解讀：從代謝角度重新理解這個疼痛（恆癒系統獨特觀點）
+6. 門診常見情況：用模糊化敘事描述臨床觀察，不編造精確數字
+7. 自我檢測清單：3-5個可自行判斷的指標
+8. FAQ 常見問題（放在作者資訊之前，為正式內容一部分，非附錄）：
+   - 3-5題，問句口語化、第一人稱（貼近真實搜尋語句，例：「我痛了三年，為什麼吃藥都沒用？」）
+   - 每題答案 2-3 句，簡潔讓 AI 搜尋引擎可直接摘錄
+   - 問題涵蓋：症狀辨識、為何傳統治療有限、代謝視角、何時就醫
+9. 結尾：作者一句話簡介 + 鼓勵讀者主動與醫師討論
+【內容紅線】
+- 禁止虛構精確數據（年齡、檢驗值、改善百分比）
+- 禁止寫成廣告文（不列門診地址、不用推銷語氣）
+- 案例用「門診常見情況」而非「某位患者」
+- 語氣像醫師在診間解釋，不像行銷文案
+【SEO 要求】
+- 輸出格式：Markdown
+- 附上雙重 Schema Markup（JSON-LD）：
+  ① MedicalWebPage：讓 AI 搜尋引擎（Perplexity、ChatGPT Search）理解頁面權威性
+  ② FAQPage：FAQ 可見內容與 Schema 保持一致，餵 Google rich results
+- 自然語言，適合 AI 搜尋引擎摘錄
+- 內部連結建議：至少2篇相關文章主題
+【OE 驗證提示】
+📋 請額外輸出供 OpenEvidence 驗證的問句：
+1.（針對文章核心因果主張的英文臨床問句）
+2.（針對治療建議的英文臨床問句）
+【語氣】專業但溫暖，像一位會解釋原因的好醫師`,
+
+      physician: `你是「恆癒系統」的學術內容策略師。請為吳政庭醫師（Dr. Cheng-Ting Wu）撰寫一篇面向醫師同業的 Substack 文章。
+【主題】${topic || "（請填入主題）"}
+${typeBlock}
+【定位】疼痛醫學 × 代謝內分泌的臨床交叉洞察
+【作者簡介】
+吳政庭醫師（Dr. Cheng-Ting Wu），具備「疼痛醫學」與「新陳代謝／內分泌」雙重專科醫師資格，致力推廣「恆癒系統」——結合疼痛管理、代謝健康與功能醫學的整合療癒架構。現任醫學 Podcast《怪奇疼痛案內所》主持人。
+【文章結構】
+1. 標題：學術但引起好奇
+2. 臨床情境：常見但容易被忽略的情境（不編造精確病例）
+3. 文獻回顧：2-3篇關鍵文獻（附DOI）— 不確定就標註「請驗證」
+4. 代謝-疼痛交叉分析：獨特臨床觀點
+5. 治療決策樹：Step-by-step 思路
+6. 實務Tips：可立即用於門診的具體建議
+7. 延伸思考：開放性問題邀請討論
+【內容紅線】
+- 文獻 DOI 不確定時標註 [DOI 待驗證]，不要編造
+- 臨床情境用「常見的情況是...」而非虛構特定病例
+- 用「臨床觀察」「我的經驗」而非「研究證實」（除非真的有引用）
+【OE 驗證提示】
+📋 請額外輸出供 OpenEvidence 驗證的問句：
+1.（針對核心文獻主張的英文臨床問句）
+2.（針對治療建議的英文臨床問句）
+【語氣】同儕對話，有臨床深度但不掉書袋`,
     };
+
     setGenerated(prompts[selTrack]);
   };
-  return(<div style={{padding:"20px 0"}}><Card>
-    <h3 style={{margin:"0 0 20px",color:M.text,fontSize:15}}>Prompt 產生器</h3>
-    <div style={{marginBottom:18}}><SectionLabel>內容軌道</SectionLabel>
-      <div style={{display:"flex",gap:6}}>
-        {Object.entries(CONTENT_TRACKS).map(([key,t])=>{const active=selTrack===key;return(<button key={key} onClick={()=>setSelTrack(key)} style={{padding:"7px 16px",borderRadius:7,border:`1px solid ${active?M.blue:M.border}`,background:active?"rgba(106,143,160,0.13)":"transparent",color:active?M.blue:M.muted,fontSize:12,cursor:"pointer",transition:"all 0.15s"}}>{t.icon} {t.name}</button>);})}
-      </div>
+
+  return (
+    <div style={{ padding: "20px 0" }}>
+      <Card>
+        <h3 style={{ margin: "0 0 20px", color: M.text, fontSize: 15 }}>Prompt 產生器</h3>
+
+        {/* Track */}
+        <div style={{ marginBottom: 18 }}>
+          <SectionLabel>內容軌道</SectionLabel>
+          <div style={{ display: "flex", gap: 6 }}>
+            {Object.entries(CONTENT_TRACKS).map(([key, t]) => {
+              const active = selTrack === key;
+              return (
+                <button key={key} onClick={() => setSelTrack(key)} style={{
+                  padding: "7px 16px", borderRadius: 7,
+                  border: `1px solid ${active ? M.blue : M.border}`,
+                  background: active ? "rgba(106,143,160,0.13)" : "transparent",
+                  color: active ? M.blue : M.muted,
+                  fontSize: 12, cursor: "pointer", transition: "all 0.15s",
+                }}>
+                  {t.icon} {t.name}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Pain Types — multi-select */}
+        <div style={{ marginBottom: 18 }}>
+          <SectionLabel>疼痛根源分類（可複選）</SectionLabel>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            {PAIN_TYPES.map(t => {
+              const active = selTypes.includes(t.id);
+              return (
+                <button key={t.id} onClick={() => toggleType(t.id)} style={{
+                  padding: "6px 14px", borderRadius: 7,
+                  border: `1px solid ${active ? t.color : M.border}`,
+                  background: active ? t.bg : "transparent",
+                  color: active ? t.color : M.muted,
+                  fontSize: 12, cursor: "pointer", transition: "all 0.15s",
+                  display: "flex", alignItems: "center", gap: 5,
+                }}>
+                  <span>{t.icon}</span>
+                  <span>{t.name}</span>
+                  {active && <span style={{ fontSize: 10, opacity: 0.7 }}>✓</span>}
+                </button>
+              );
+            })}
+          </div>
+          {selTypes.length > 0 && (
+            <div style={{ marginTop: 8, display: "flex", gap: 4, flexWrap: "wrap" }}>
+              {selTypes.map(id => {
+                const t = PAIN_TYPES.find(p => p.id === id);
+                return <span key={id} style={{ fontSize: 10, padding: "2px 8px", borderRadius: 4, background: t.bg, color: t.color }}>T{t.id} {t.name}</span>;
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Topic */}
+        <div style={{ marginBottom: 20 }}>
+          <SectionLabel>文章主題</SectionLabel>
+          <input
+            type="text" value={topic} onChange={e => setTopic(e.target.value)}
+            placeholder="例：下背痛與胰島素阻抗的關聯"
+            style={{
+              width: "100%", padding: "10px 14px", borderRadius: 8,
+              border: `1px solid ${M.border}`, background: M.cardAlt, color: M.text,
+              fontSize: 13, outline: "none",
+            }}
+          />
+        </div>
+
+        {/* Actions */}
+        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+          <button onClick={generate} style={{
+            padding: "9px 22px", borderRadius: 8, border: "none",
+            background: `linear-gradient(135deg, ${M.blue}, ${M.mauve})`,
+            color: "#fff", fontSize: 13, cursor: "pointer", fontWeight: 600,
+          }}>
+            產生 Prompt ✨
+          </button>
+          <NotionBtn label="🗄️ 開啟 Notion" />
+        </div>
+
+        {generated && (
+          <div style={{ marginTop: 20 }}>
+            <div style={{ color: M.faint, fontSize: 11, marginBottom: 8 }}>將以下 Prompt 貼入 Claude Cowork 新對話：</div>
+            <pre style={{
+              background: "#2A2724", padding: 16, borderRadius: 8,
+              color: "#C4BDB5", fontSize: 11, lineHeight: 1.65,
+              whiteSpace: "pre-wrap", wordBreak: "break-all",
+              maxHeight: 300, overflowY: "auto",
+              border: `1px solid ${M.border}`, margin: 0,
+            }}>{generated}</pre>
+          </div>
+        )}
+      </Card>
     </div>
-    <div style={{marginBottom:18}}><SectionLabel>疼痛根源分類（可複選）</SectionLabel>
-      <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-        {PAIN_TYPES.map(t=>{const active=selTypes.includes(t.id);return(<button key={t.id} onClick={()=>toggleType(t.id)} style={{padding:"6px 14px",borderRadius:7,border:`1px solid ${active?t.color:M.border}`,background:active?t.bg:"transparent",color:active?t.color:M.muted,fontSize:12,cursor:"pointer",transition:"all 0.15s",display:"flex",alignItems:"center",gap:5}}><span>{t.icon}</span><span>{t.name}</span>{active&&<span style={{fontSize:10,opacity:0.7}}>✓</span>}</button>);})}
-      </div>
-      {selTypes.length>0&&<div style={{marginTop:8,display:"flex",gap:4,flexWrap:"wrap"}}>{selTypes.map(id=>{const t=PAIN_TYPES.find(p=>p.id===id);return <span key={id} style={{fontSize:10,padding:"2px 8px",borderRadius:4,background:t.bg,color:t.color}}>T{t.id} {t.name}</span>;})}</div>}
-    </div>
-    <div style={{marginBottom:20}}><SectionLabel>文章主題</SectionLabel>
-      <input type="text" value={topic} onChange={e=>setTopic(e.target.value)} placeholder="例：下背痛與胰島素阻抗的關聯" style={{width:"100%",padding:"10px 14px",borderRadius:8,border:`1px solid ${M.border}`,background:M.cardAlt,color:M.text,fontSize:13,outline:"none"}}/>
-    </div>
-    <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
-      <button onClick={generate} style={{padding:"9px 22px",borderRadius:8,border:"none",background:`linear-gradient(135deg, ${M.blue}, ${M.mauve})`,color:"#fff",fontSize:13,cursor:"pointer",fontWeight:600}}>產生 Prompt ✨</button>
-      <NotionBtn label="🗄️ 開啟 Notion"/>
-    </div>
-    {generated&&<div style={{marginTop:20}}><div style={{color:M.faint,fontSize:11,marginBottom:8}}>將以下 Prompt 貼入 Claude Cowork 新對話：</div><pre style={{background:"#2A2724",padding:16,borderRadius:8,color:"#C4BDB5",fontSize:11,lineHeight:1.65,whiteSpace:"pre-wrap",wordBreak:"break-all",maxHeight:300,overflowY:"auto",border:`1px solid ${M.border}`,margin:0}}>{generated}</pre></div>}
-  </Card></div>);
+  );
 }
-function TemplateView({track}){
-  const t=TEMPLATES[track];
-  if(!t)return <div style={{color:M.muted,padding:20}}>此軌道模板開發中...</div>;
-  return(<div style={{padding:"20px 0"}}><Card>
-    <h3 style={{margin:"0 0 16px",color:M.text,fontSize:15}}>{t.title}</h3>
-    <div style={{display:"flex",flexDirection:"column",gap:6}}>
-      {t.structure.map((s,i)=>(<div key={i} style={{display:"flex",gap:12,padding:"10px 14px",background:i%2===0?M.cardAlt:"transparent",borderRadius:8}}><div style={{minWidth:28,height:28,borderRadius:"50%",background:"rgba(106,143,160,0.15)",display:"flex",alignItems:"center",justifyContent:"center",color:M.blue,fontSize:12,fontWeight:700,flexShrink:0}}>{i+1}</div><div><div style={{color:M.text,fontSize:13,fontWeight:600}}>{s.section}</div><div style={{color:M.muted,fontSize:11,marginTop:2}}>{s.hint}</div></div></div>))}
+
+// ─── Template Viewer ───
+function TemplateView({ track }) {
+  const t = TEMPLATES[track];
+  if (!t) return <div style={{ color: M.muted, padding: 20 }}>此軌道模板開發中...</div>;
+  return (
+    <div style={{ padding: "20px 0" }}>
+      <Card>
+        <h3 style={{ margin: "0 0 16px", color: M.text, fontSize: 15 }}>{t.title}</h3>
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          {t.structure.map((s, i) => (
+            <div key={i} style={{ display: "flex", gap: 12, padding: "10px 14px", background: i % 2 === 0 ? M.cardAlt : "transparent", borderRadius: 8 }}>
+              <div style={{ minWidth: 28, height: 28, borderRadius: "50%", background: `rgba(106,143,160,0.15)`, display: "flex", alignItems: "center", justifyContent: "center", color: M.blue, fontSize: 12, fontWeight: 700, flexShrink: 0 }}>{i + 1}</div>
+              <div>
+                <div style={{ color: M.text, fontSize: 13, fontWeight: 600 }}>{s.section}</div>
+                <div style={{ color: M.muted, fontSize: 11, marginTop: 2 }}>{s.hint}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
     </div>
-  </Card></div>);
+  );
 }
-function WorkflowSOP(){
-  const steps=[
-    {num:"1",title:"捕捉素材",desc:"門診遇到好案例 → 手機記 3 個關鍵字到 Notion Inbox",time:"30秒",tool:"Notion 手機"},
-    {num:"2",title:"選題排序",desc:"每週一次，從 Inbox 挑選 1-2 篇，在 Notion 改狀態為「進行中」",time:"10分鐘",tool:"Notion"},
-    {num:"3",title:"產生 Prompt",desc:"用本引擎設定分類+主題，點「產生 Prompt」",time:"2分鐘",tool:"本儀表板"},
-    {num:"4",title:"Claude 產稿",desc:"將 Prompt 貼入 Claude Cowork，產出內容 + OE 驗證問句",time:"5分鐘",tool:"Claude Cowork"},
-    {num:"5",title:"OE 驗證",desc:"將驗證問句貼入 OpenEvidence，核對核心醫學主張",time:"5分鐘",tool:"OpenEvidence"},
-    {num:"6",title:"醫師審閱",desc:"對照 OE 結果修正：醫學正確性 + 去識別化 + 語氣",time:"10分鐘",tool:"你的腦"},
-    {num:"7",title:"發布",desc:"患者文 → WordPress / 醫師文 → Substack / 拆出 FB 短貼文",time:"5分鐘",tool:"WP + Substack"},
-    {num:"8",title:"更新 Notion",desc:"在 Notion 把狀態改為「完成」，填入發布連結",time:"30秒",tool:"Notion"},
+
+// ─── Workflow SOP ───
+function WorkflowSOP() {
+  const steps = [
+    { num: "1", title: "捕捉素材",    desc: "門診遇到好案例 → 手機記 3 個關鍵字到 Notion Inbox",           time: "30秒",   tool: "Notion 手機" },
+    { num: "2", title: "選題排序",    desc: "每週一次，從 Inbox 挑選 1-2 篇，在 Notion 改狀態為「進行中」", time: "10分鐘", tool: "Notion" },
+    { num: "3", title: "產生 Prompt", desc: "用本引擎設定分類+主題，點「產生 Prompt」",                    time: "2分鐘",  tool: "本儀表板" },
+    { num: "4", title: "Claude 產稿", desc: "將 Prompt 貼入 Claude Cowork，產出內容 + OE 驗證問句",         time: "5分鐘",  tool: "Claude Cowork" },
+    { num: "5", title: "OE 驗證",     desc: "將驗證問句貼入 OpenEvidence，核對核心醫學主張",               time: "5分鐘",  tool: "OpenEvidence" },
+    { num: "6", title: "醫師審閱",    desc: "對照 OE 結果修正：醫學正確性 + 去識別化 + 語氣",              time: "10分鐘", tool: "你的腦" },
+    { num: "7", title: "發布",        desc: "患者文 → WordPress / 醫師文 → Substack / 拆出 FB 短貼文",     time: "5分鐘",  tool: "WP + Substack" },
+    { num: "8", title: "更新 Notion", desc: "在 Notion 把狀態改為「完成」，填入發布連結",                   time: "30秒",   tool: "Notion" },
   ];
-  return(<div style={{padding:"20px 0"}}><Card>
-    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4}}>
-      <h3 style={{margin:0,color:M.text,fontSize:15}}>每週內容 SOP</h3>
-      <NotionBtn label="🗄️ Notion" small={true}/>
+  return (
+    <div style={{ padding: "20px 0" }}>
+      <Card>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4 }}>
+          <h3 style={{ margin: 0, color: M.text, fontSize: 15 }}>每週內容 SOP</h3>
+          <NotionBtn label="🗄️ Notion" small={true} />
+        </div>
+        <p style={{ margin: "0 0 18px", color: M.muted, fontSize: 11 }}>目標：每週 1 篇患者文 + 1 篇醫師文 + FB 短貼文，總投入 ≤ 40 分鐘</p>
+        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          {steps.map((s, i) => (
+            <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "10px 14px", background: i % 2 === 0 ? M.cardAlt : "transparent", borderRadius: 8 }}>
+              <div style={{ minWidth: 30, height: 30, borderRadius: "50%", background: `rgba(106,143,160,0.12)`, display: "flex", alignItems: "center", justifyContent: "center", color: M.blue, fontSize: 13, fontWeight: 800, flexShrink: 0, border: `1px solid rgba(106,143,160,0.25)` }}>{s.num}</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ color: M.text, fontSize: 13, fontWeight: 600 }}>{s.title}</div>
+                <div style={{ color: M.muted, fontSize: 11, marginTop: 2 }}>{s.desc}</div>
+              </div>
+              <div style={{ textAlign: "right", flexShrink: 0 }}>
+                <div style={{ color: M.blue, fontSize: 11, fontWeight: 600 }}>{s.time}</div>
+                <div style={{ color: M.faint, fontSize: 10 }}>{s.tool}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div style={{ marginTop: 16, padding: "10px 14px", background: `rgba(106,143,160,0.08)`, borderRadius: 8, borderLeft: `3px solid ${M.blue}` }}>
+          <div style={{ color: M.blue, fontSize: 12, fontWeight: 600 }}>⏱ 總時間估算：~40 分鐘/週</div>
+          <div style={{ color: M.muted, fontSize: 11, marginTop: 2 }}>你的時間花在「OE 驗證 + 審閱」，其餘都是系統處理</div>
+        </div>
+      </Card>
     </div>
-    <p style={{margin:"0 0 18px",color:M.muted,fontSize:11}}>目標：每週 1 篇患者文 + 1 篇醫師文 + FB 短貼文，總投入 ≤ 40 分鐘</p>
-    <div style={{display:"flex",flexDirection:"column",gap:4}}>
-      {steps.map((s,i)=>(<div key={i} style={{display:"flex",alignItems:"flex-start",gap:12,padding:"10px 14px",background:i%2===0?M.cardAlt:"transparent",borderRadius:8}}><div style={{minWidth:30,height:30,borderRadius:"50%",background:"rgba(106,143,160,0.12)",display:"flex",alignItems:"center",justifyContent:"center",color:M.blue,fontSize:13,fontWeight:800,flexShrink:0,border:"1px solid rgba(106,143,160,0.25)"}}>{s.num}</div><div style={{flex:1}}><div style={{color:M.text,fontSize:13,fontWeight:600}}>{s.title}</div><div style={{color:M.muted,fontSize:11,marginTop:2}}>{s.desc}</div></div><div style={{textAlign:"right",flexShrink:0}}><div style={{color:M.blue,fontSize:11,fontWeight:600}}>{s.time}</div><div style={{color:M.faint,fontSize:10}}>{s.tool}</div></div></div>))}
-    </div>
-    <div style={{marginTop:16,padding:"10px 14px",background:"rgba(106,143,160,0.08)",borderRadius:8,borderLeft:`3px solid ${M.blue}`}}>
-      <div style={{color:M.blue,fontSize:12,fontWeight:600}}>⏱ 總時間估算：~40 分鐘/週</div>
-      <div style={{color:M.muted,fontSize:11,marginTop:2}}>你的時間花在「OE 驗證 + 審閱」，其餘都是系統處理</div>
-    </div>
-  </Card></div>);
+  );
 }
-function NotionSetup(){
-  const fields=[
-    {name:"標題",type:"Title"},{name:"疼痛根因分型",type:"Select",note:"Type 1–5"},
-    {name:"目標受眾",type:"Select",note:"患者端 / 醫師端 / 雙軌"},{name:"發佈渠道",type:"Multi-select",note:"AI友善文章 / Substack / Podcast / LINE"},
-    {name:"狀態",type:"Status",note:"未開始 → 進行中 → 完成"},{name:"內容框架",type:"Select"},
-    {name:"備註",type:"Text"},{name:"建立日期",type:"Date"},{name:"發佈日期",type:"Date"},
+
+// ─── Notion Setup ───
+function NotionSetup() {
+  const fields = [
+    { name: "標題",         type: "Title" },
+    { name: "疼痛根因分型", type: "Select",       note: "Type 1–5" },
+    { name: "目標受眾",     type: "Select",       note: "患者端 / 醫師端 / 雙軌" },
+    { name: "發佈渠道",     type: "Multi-select", note: "AI友善文章 / Substack / Podcast / LINE" },
+    { name: "狀態",         type: "Status",       note: "未開始 → 進行中 → 完成" },
+    { name: "內容框架",     type: "Select" },
+    { name: "備註",         type: "Text" },
+    { name: "建立日期",     type: "Date" },
+    { name: "發佈日期",     type: "Date" },
   ];
-  return(<div style={{padding:"20px 0"}}><Card>
-    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16}}>
-      <div><h3 style={{margin:"0 0 4px",color:M.text,fontSize:15}}>Notion 資料庫</h3><p style={{margin:0,color:M.muted,fontSize:12}}>「恆癒內容引擎」已建立，6 張選題卡片已寫入 ✅</p></div>
-      <NotionBtn label="🗄️ 開啟資料庫 →"/>
+  return (
+    <div style={{ padding: "20px 0" }}>
+      <Card>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
+          <div>
+            <h3 style={{ margin: "0 0 4px", color: M.text, fontSize: 15 }}>Notion 資料庫</h3>
+            <p style={{ margin: 0, color: M.muted, fontSize: 12 }}>「恆癒內容引擎」已建立，6 張選題卡片已寫入 ✅</p>
+          </div>
+          <NotionBtn label="🗄️ 開啟資料庫 →" />
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+          {fields.map((f, i) => (
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", background: M.cardAlt, borderRadius: 7, fontSize: 13 }}>
+              <span style={{ color: M.muted, minWidth: 24, textAlign: "right", fontSize: 11 }}>{i + 1}.</span>
+              <span style={{ color: M.text, minWidth: 100, fontWeight: 600 }}>{f.name}</span>
+              <span style={{ color: M.mauve, fontSize: 10, background: `rgba(138,125,152,0.12)`, padding: "2px 8px", borderRadius: 4, minWidth: 70, textAlign: "center" }}>{f.type}</span>
+              {f.note && <span style={{ color: M.faint, fontSize: 11 }}>{f.note}</span>}
+            </div>
+          ))}
+        </div>
+      </Card>
     </div>
-    <div style={{display:"flex",flexDirection:"column",gap:5}}>
-      {fields.map((f,i)=>(<div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 12px",background:M.cardAlt,borderRadius:7,fontSize:13}}><span style={{color:M.muted,minWidth:24,textAlign:"right",fontSize:11}}>{i+1}.</span><span style={{color:M.text,minWidth:100,fontWeight:600}}>{f.name}</span><span style={{color:M.mauve,fontSize:10,background:"rgba(138,125,152,0.12)",padding:"2px 8px",borderRadius:4,minWidth:70,textAlign:"center"}}>{f.type}</span>{f.note&&<span style={{color:M.faint,fontSize:11}}>{f.note}</span>}</div>))}
-    </div>
-  </Card></div>);
+  );
 }
-function App(){
-  const [activeTab,setActiveTab]=useState("prompt");
-  const [templateTrack,setTemplateTrack]=useState("patient");
-  const tabs=[{key:"prompt",label:"Prompt 產生器",icon:"✨"},{key:"template",label:"文章模板",icon:"📝"},{key:"sop",label:"每週 SOP",icon:"⚡"},{key:"notion",label:"Notion 設定",icon:"🗄️"}];
-  return(<div style={{minHeight:"100vh",background:M.bg,color:M.text}}>
-    <div style={{padding:"26px 20px 18px",borderBottom:`1px solid ${M.border}`}}>
-      <div style={{display:"flex",alignItems:"center",gap:10}}>
-        <div style={{width:36,height:36,borderRadius:10,background:`linear-gradient(135deg, ${M.blue}, ${M.mauve})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:17,flexShrink:0,color:"#fff",fontWeight:700}}>恆</div>
-        <div style={{flex:1}}><h1 style={{margin:0,fontSize:17,fontWeight:700,color:M.text,letterSpacing:0.3}}>恆癒系統 Content Engine</h1><p style={{margin:0,color:M.muted,fontSize:11}}>找到痛的根源，不只是止痛</p></div>
-        <NotionBtn label="🗄️ Notion" small={true}/>
+
+// ─── Main App ───
+function App() {
+  const [activeTab, setActiveTab]       = useState("prompt");
+  const [templateTrack, setTemplateTrack] = useState("patient");
+
+  const tabs = [
+    { key: "prompt",   label: "Prompt 產生器", icon: "✨" },
+    { key: "template", label: "文章模板",       icon: "📝" },
+    { key: "sop",      label: "每週 SOP",       icon: "⚡" },
+    { key: "notion",   label: "Notion 設定",    icon: "🗄️" },
+  ];
+
+  return (
+    <div style={{ minHeight: "100vh", background: M.bg, color: M.text }}>
+
+      {/* Header */}
+      <div style={{ padding: "26px 20px 18px", borderBottom: `1px solid ${M.border}` }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ width: 36, height: 36, borderRadius: 10, background: `linear-gradient(135deg, ${M.blue}, ${M.mauve})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17, flexShrink: 0, color: "#fff", fontWeight: 700 }}>恆</div>
+          <div style={{ flex: 1 }}>
+            <h1 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: M.text, letterSpacing: 0.3 }}>恆癒系統 Content Engine</h1>
+            <p style={{ margin: 0, color: M.muted, fontSize: 11 }}>找到痛的根源，不只是止痛</p>
+          </div>
+          <NotionBtn label="🗄️ Notion" small={true} />
+        </div>
+        <div style={{ display: "flex", gap: 4, marginTop: 14, flexWrap: "wrap" }}>
+          {PAIN_TYPES.map(t => (
+            <span key={t.id} style={{ fontSize: 10, padding: "3px 9px", borderRadius: 4, background: t.bg, color: t.color, border: `1px solid ${t.color}25` }}>
+              {t.icon} T{t.id} {t.name}
+            </span>
+          ))}
+        </div>
       </div>
-      <div style={{display:"flex",gap:4,marginTop:14,flexWrap:"wrap"}}>
-        {PAIN_TYPES.map(t=>(<span key={t.id} style={{fontSize:10,padding:"3px 9px",borderRadius:4,background:t.bg,color:t.color,border:`1px solid ${t.color}25`}}>{t.icon} T{t.id} {t.name}</span>))}
+
+      {/* Tabs */}
+      <div style={{ display: "flex", padding: "10px 20px 0", overflowX: "auto", borderBottom: `1px solid ${M.border}` }}>
+        {tabs.map(tab => {
+          const active = activeTab === tab.key;
+          return (
+            <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{
+              padding: "8px 14px", border: "none",
+              borderBottom: active ? `2px solid ${M.blue}` : "2px solid transparent",
+              background: "transparent",
+              color: active ? M.blue : M.muted,
+              fontSize: 12, cursor: "pointer", whiteSpace: "nowrap",
+              fontWeight: active ? 600 : 400, transition: "all 0.15s",
+            }}>
+              {tab.icon} {tab.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Content */}
+      <div style={{ padding: "0 20px 48px" }}>
+        {activeTab === "prompt"   && <PromptGen />}
+        {activeTab === "template" && (
+          <div>
+            <div style={{ display: "flex", gap: 6, padding: "20px 0 0" }}>
+              {[["patient","📖 患者衛教"],["physician","🩺 醫師Substack"]].map(([key, label]) => (
+                <button key={key} onClick={() => setTemplateTrack(key)} style={{
+                  padding: "5px 12px", borderRadius: 6,
+                  border: `1px solid ${templateTrack === key ? M.blue : M.border}`,
+                  background: templateTrack === key ? `rgba(106,143,160,0.12)` : "transparent",
+                  color: templateTrack === key ? M.blue : M.muted,
+                  fontSize: 12, cursor: "pointer",
+                }}>{label}</button>
+              ))}
+            </div>
+            <TemplateView track={templateTrack} />
+          </div>
+        )}
+        {activeTab === "sop"    && <WorkflowSOP />}
+        {activeTab === "notion" && <NotionSetup />}
+      </div>
+
+      {/* Footer */}
+      <div style={{ padding: "14px 20px", borderTop: `1px solid ${M.border}`, textAlign: "center" }}>
+        <p style={{ margin: 0, color: M.faint, fontSize: 10 }}>恆癒系統 Content Engine v3.4 — Notion 已串接 ✅ | Claude Cowork + OpenEvidence</p>
       </div>
     </div>
-    <div style={{display:"flex",padding:"10px 20px 0",overflowX:"auto",borderBottom:`1px solid ${M.border}`}}>
-      {tabs.map(tab=>{const active=activeTab===tab.key;return(<button key={tab.key} onClick={()=>setActiveTab(tab.key)} style={{padding:"8px 14px",border:"none",borderBottom:active?`2px solid ${M.blue}`:"2px solid transparent",background:"transparent",color:active?M.blue:M.muted,fontSize:12,cursor:"pointer",whiteSpace:"nowrap",fontWeight:active?600:400,transition:"all 0.15s"}}>{tab.icon} {tab.label}</button>);})}
-    </div>
-    <div style={{padding:"0 20px 48px"}}>
-      {activeTab==="prompt"&&<PromptGen/>}
-      {activeTab==="template"&&<div><div style={{display:"flex",gap:6,padding:"20px 0 0"}}>{[["patient","📖 患者衛教"],["physician","🩺 醫師Substack"]].map(([key,label])=>(<button key={key} onClick={()=>setTemplateTrack(key)} style={{padding:"5px 12px",borderRadius:6,border:`1px solid ${templateTrack===key?M.blue:M.border}`,background:templateTrack===key?"rgba(106,143,160,0.12)":"transparent",color:templateTrack===key?M.blue:M.muted,fontSize:12,cursor:"pointer"}}>{label}</button>))}</div><TemplateView track={templateTrack}/></div>}
-      {activeTab==="sop"&&<WorkflowSOP/>}
-      {activeTab==="notion"&&<NotionSetup/>}
-    </div>
-    <div style={{padding:"14px 20px",borderTop:`1px solid ${M.border}`,textAlign:"center"}}><p style={{margin:0,color:M.faint,fontSize:10}}>恆癒系統 Content Engine v3.3 — Notion 已串接 ✅ | Claude Cowork + OpenEvidence</p></div>
-  </div>);
+  );
 }
-ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
 </script>
 </body>
 </html>
